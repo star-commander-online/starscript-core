@@ -31,3 +31,11 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Node/TypeScript
+typescript/node_modules/
+typescript/dist/
+
+# WASM build output
+dist/*.wasm
+*.wasm

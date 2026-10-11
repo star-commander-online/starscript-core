@@ -1,0 +1,31 @@
+name: release-validation
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.11.0"
+      - name: Go test
+        run: go test -race ./...
+      - name: Go vet
+        run: go vet ./...
+      - name: WASM build
+        run: GOOS=js GOARCH=wasm go build -o dist/starscript.wasm ./wasm
+      - name: TypeScript checks
+        working-directory: typescript
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
