@@ -1,87 +1,99 @@
+/**
+ * TypeScript wrapper for the Go WASM StarScript engine.
+ */
+
 import type {
-  CommandHandler,
-  EngineOptions,
-  ExecutionResult,
   StarScriptEngine,
+  StarCommand,
+  ExecuteResult,
+  ExecuteOptions,
+  ExecuteError,
+  StarValue,
   WasmExports,
+  EngineOptions,
 } from "./types.js";
+import { CommandRegistry } from "./command-registry.js";
+import { WasmBridge } from "./wasm-bridge.js";
 
-const handlersByEngine = new Map<number, Map<string, CommandHandler>>();
-let bridgeInstalled = false;
-
-function installBridge() {
-  if (bridgeInstalled) {
-    return;
-  }
-
-  (globalThis as typeof globalThis & {
-    __starscriptInvokeCommand?: (
-      engineId: number,
-      commandName: string,
-      args: unknown[]
-    ) => Promise<unknown>;
-  }).__starscriptInvokeCommand = async (
-    engineId: number,
-    commandName: string,
-    args: unknown[]
-  ) => {
-    const engineHandlers = handlersByEngine.get(engineId);
-    if (!engineHandlers) {
-      throw new Error(`No handler registry for engine ${engineId}`);
-    }
-
-    const handler = engineHandlers.get(commandName);
-    if (!handler) {
-      throw new Error(`Unknown command: ${commandName}`);
-    }
-
-    return handler({
-      name: commandName,
-      args: args as never,
-    });
-  };
-
-  bridgeInstalled = true;
-}
-
+/**
+ * Implementation of StarScriptEngine using Go WASM backend.
+ */
 export class WasmStarScriptEngine implements StarScriptEngine {
-  private readonly wasm: WasmExports;
-  private readonly engineId: number;
+  private registry: CommandRegistry;
+  private bridge: WasmBridge;
+  private wasm: WasmExports;
+  private engineId: number;
   private disposed = false;
 
-  constructor(wasm: WasmExports, options?: EngineOptions) {
+  constructor(wasm: WasmExports, engineId: number) {
     this.wasm = wasm;
-    installBridge();
-    this.engineId = wasm.createEngine(options);
-    handlersByEngine.set(this.engineId, new Map<string, CommandHandler>());
+    this.engineId = engineId;
+    this.registry = new CommandRegistry();
+    this.bridge = new WasmBridge(this.registry);
+    this.bridge.setupCallback();
   }
 
-  registerCommand(name: string, handler: CommandHandler): void {
-    this.assertNotDisposed();
-    const handlers = handlersByEngine.get(this.engineId);
-    if (!handlers) {
-      throw new Error("Engine handler registry was not initialized");
+  registerCommand(name: string, handler: StarCommand): void {
+    this.checkDisposed();
+    this.registry.register(name, handler);
+  }
+
+  unregisterCommand(name: string): void {
+    this.checkDisposed();
+    this.registry.unregister(name);
+  }
+
+  async execute(source: string, options?: ExecuteOptions): Promise<ExecuteResult> {
+    this.checkDisposed();
+
+    // Set abort signal for command invocations during execution
+    this.bridge.setAbortSignal(options?.signal);
+
+    try {
+      const result = await this.wasm.execute(this.engineId, source);
+
+      return {
+        ok: true,
+        value: result.value,
+        variables: result.variables,
+        steps: result.steps,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const executeError: ExecuteError = {
+        message,
+        kind: this.classifyError(message),
+      };
+
+      return {
+        ok: false,
+        error: executeError,
+      };
     }
-    handlers.set(name, handler);
-  }
-
-  async execute(source: string): Promise<ExecutionResult> {
-    this.assertNotDisposed();
-    return this.wasm.execute(this.engineId, source);
   }
 
   dispose(): void {
-    if (this.disposed) {
-      return;
+    if (!this.disposed) {
+      this.wasm.disposeEngine(this.engineId);
+      this.registry.clear();
+      this.disposed = true;
     }
-    this.wasm.disposeEngine(this.engineId);
-    handlersByEngine.delete(this.engineId);
-    this.disposed = true;
   }
 
-  private assertNotDisposed(): void {
+  private checkDisposed(): void {
     if (this.disposed) {
-      throw new Error("Engine already disposed");
+      throw new Error("Engine has been disposed");
     }
+  }
+
+  private classifyError(message: string): ExecuteError["kind"] {
+    if (message.includes("syntax") || message.includes("parse")) {
+      return "syntax_error";
+    } else if (message.includes("unknown command")) {
+      return "unknown_command";
+    } else if (message.includes("budget") || message.includes("exceeds")) {
+      return "budget_exceeded";
+    }
+    return "runtime_error";
   }
 }

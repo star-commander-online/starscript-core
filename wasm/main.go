@@ -198,25 +198,8 @@ func jsToAny(v js.Value) any {
 		return v.Float()
 	case js.TypeString:
 		return v.String()
-	case js.TypeObject:
-		if js.Global().Get("Array").Call("isArray", v).Bool() {
-			length := v.Length()
-			out := make([]any, 0, length)
-			for i := 0; i < length; i++ {
-				out = append(out, jsToAny(v.Index(i)))
-			}
-			return out
-		}
-
-		keys := js.Global().Get("Object").Call("keys", v)
-		count := keys.Length()
-		obj := make(map[string]any, count)
-		for i := 0; i < count; i++ {
-			key := keys.Index(i).String()
-			obj[key] = jsToAny(v.Get(key))
-		}
-		return obj
 	default:
+		// Arrays and objects are not supported - return nil
 		return nil
 	}
 }
