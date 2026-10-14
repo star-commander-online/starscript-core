@@ -450,7 +450,10 @@ func (p *parser) advance() Token {
 
 func (p *parser) isAtEnd() bool {
 	// If we've reached the end of the token list or encountered an EOF token, we're at the end.
-	return p.pos >= len(p.tokens) || p.peekType() == TokenEOF
+	if p.pos >= len(p.tokens) {
+		return true
+	}
+	return p.tokens[p.pos].Type == TokenEOF
 }
 
 // errorf creates a parse error with line information.

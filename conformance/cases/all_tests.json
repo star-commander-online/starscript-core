@@ -1,0 +1,325 @@
+[
+  {
+    "name": "simple_assignment",
+    "source": "x = 1",
+    "commands": {},
+    "options": {},
+    "expected": {
+      "resultValue": { "kind": "number", "value": 1 },
+      "variables": { "x": { "kind": "number", "value": 1 } }
+    }
+  },
+  {
+    "name": "string_concatenation",
+    "source": "a = \"hello\"\nb = \"world\"\nc = $a + $b\nreturn $c",
+    "commands": {},
+    "options": {},
+    "expected": {
+      "resultValue": { "kind": "string", "value": "helloworld" }
+    }
+  },
+  {
+    "name": "undefined_variable_error",
+    "source": "x = $undefined",
+    "commands": {},
+    "options": {},
+    "expected": { "error": { "code": "runtime_error", "line": 1 } }
+  },
+  {
+    "name": "unknown_command_error",
+    "source": "missing 1",
+    "commands": {},
+    "options": {},
+    "expected": { "error": { "code": "unknown_command", "line": 1 } }
+  },
+  {
+    "name": "budget_exceeded",
+    "source": "a = 1\nb = 2",
+    "commands": {},
+    "options": { "maxSteps": 1 },
+    "expected": { "error": { "code": "budget_exceeded", "line": 2 } }
+  },
+  {
+    "name": "addition",
+    "source": "return 2 + 3",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 5 } }
+  },
+  {
+    "name": "expression_fallback_to_string",
+    "source": "x = unknown_var_name",
+    "commands": {},
+    "options": {},
+    "expected": {
+      "resultValue": { "kind": "string", "value": "unknown_var_name" },
+      "variables": { "x": { "kind": "string", "value": "unknown_var_name" } }
+    }
+  },
+  {
+    "name": "subtraction",
+    "source": "return 10 - 3",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 7 } }
+  },
+  {
+    "name": "multiplication",
+    "source": "return 4 * 5",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 20 } }
+  },
+  {
+    "name": "division",
+    "source": "return 20 / 4",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 5 } }
+  },
+  {
+    "name": "operator_precedence_mult_before_add",
+    "source": "return 2 + 3 * 4",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 14 } }
+  },
+  {
+    "name": "comparison_equal",
+    "source": "return 5 == 5",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "comparison_not_equal",
+    "source": "return 5 != 3",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "comparison_less_than",
+    "source": "return 3 < 5",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "comparison_greater_than",
+    "source": "return 5 > 3",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "logical_and_true",
+    "source": "return true && true",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "logical_and_false",
+    "source": "return true && false",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": false } }
+  },
+  {
+    "name": "logical_or_true",
+    "source": "return false || true",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "logical_or_false",
+    "source": "return false || false",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": false } }
+  },
+  {
+    "name": "logical_not_true",
+    "source": "return !true",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": false } }
+  },
+  {
+    "name": "logical_not_false",
+    "source": "return !false",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "unary_minus",
+    "source": "return -5",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": -5 } }
+  },
+  {
+    "name": "truthy_zero_is_false",
+    "source": "x = 0\nif $x do\n  y = false\nelse do\n  y = true\nend\nreturn $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "truthy_nonzero_is_true",
+    "source": "x = 1\nif $x do\n  y = true\nelse do\n  y = false\nend\nreturn $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "truthy_false_is_false",
+    "source": "x = false\nif $x do\n  y = false\nelse do\n  y = true\nend\nreturn $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "truthy_null_is_false",
+    "source": "x = null\nif $x do\n  y = false\nelse do\n  y = true\nend\nreturn $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "truthy_empty_string_is_false",
+    "source": "x = \"\"\nif $x do\n  y = false\nelse do\n  y = true\nend\nreturn $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "truthy_string_zero_is_true",
+    "source": "x = \"0\"\nif $x do\n  y = true\nelse do\n  y = false\nend\nreturn $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": false } }
+  },
+  {
+    "name": "truthy_non_empty_string_is_true",
+    "source": "x = \"hello\"\nif $x do\n  y = true\nelse do\n  y = false\nend\nreturn $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "if_then_else",
+    "source": "x = 5\nif $x == 5 do\n  return true\nelse do\n  return false\nend",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "if_else_only",
+    "source": "x = 2\nif $x == 1 do\n  y = 1\nelse do\n  y = 2\nend\nreturn $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 2 } }
+  },
+  {
+    "name": "while_loop_basic",
+    "source": "i = 0\nsum = 0\nwhile $i < 3 do\n  sum = $sum + $i\n  i = $i + 1\nend\nreturn $sum",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 3 } }
+  },
+  {
+    "name": "variable_interpolation",
+    "source": "x = 5\ny = 10\nreturn $x + $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 15 } }
+  },
+  {
+    "name": "string_concatenation_with_number",
+    "source": "x = \"value=\"\ny = 42\nreturn $x + $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "value=42" } }
+  },
+  {
+    "name": "equality_different_types",
+    "source": "return 5 == \"5\"",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "null_comparison",
+    "source": "return null == null",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "number_string_concatenation",
+    "source": "x = \"value=\"\ny = 42\nreturn $x + $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "value=42" } }
+  },
+  {
+    "name": "parenthesized_expression",
+    "source": "return (2 + 3) * 4",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 20 } }
+  },
+  {
+    "name": "last_statement_value",
+    "source": "x = 1\ny = 2\nz = 3",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 3 } }
+  },
+  {
+    "name": "return_early",
+    "source": "x = 1\nreturn $x\ny = 2",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 1 } }
+  },
+  {
+    "name": "short_circuit_and",
+    "source": "x = false && true\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": false } }
+  },
+  {
+    "name": "short_circuit_or",
+    "source": "x = true || false\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "comments_ignored",
+    "source": "# This is a comment\nx = 1\n# Another comment\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 1 } }
+  },
+  {
+    "name": "variable_reassignment",
+    "source": "x = 1\nx = 2\nx = 3\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 3 } }
+  },
+  {
+    "name": "command_call_with_variable",
+    "source": "x = 5\ntest_cmd $x",
+    "commands": { "test_cmd": { "result": { "kind": "string", "value": "OK" } } },
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "OK" } }
+  }
+]

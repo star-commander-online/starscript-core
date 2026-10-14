@@ -5,6 +5,7 @@
   "description": "TypeScript bridge for the Go StarScript interpreter",
   "license": "MIT",
   "type": "module",
+  "repository": {"type": "git", "url": "https://github.com/star-commander-online/starscript-core"},
   "files": [
     "dist"
   ],
