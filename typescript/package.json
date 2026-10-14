@@ -1,30 +1,27 @@
+
 {
-  "name": "@star-commander/starscript-core",
+  "name": "@star-commander-online/starscript-core",
   "version": "0.1.0",
-  "description": "Go-based StarScript interpreter compiled to WASM with TypeScript bindings",
+  "description": "TypeScript bridge for the Go StarScript interpreter",
+  "license": "MIT",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./wasm_exec.js": "./dist/wasm_exec.js",
-    "./starscript.wasm": "./dist/starscript.wasm"
+    }
   },
-  "files": [
-    "dist"
+  "sideEffects": [
+    "./dist/wasm_exec.js"
   ],
   "scripts": {
-    "build": "tsc && npm run copy-assets",
-    "copy-assets": "node scripts/copy-assets.js",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest",
-    "clean": "rm -rf dist"
+    "build": "node build.mjs",
+    "prepack": "npm run build"
   },
   "devDependencies": {
-    "typescript": "5.9.2",
-    "vitest": "3.2.4"
+    "typescript": "^5.0.0"
   }
 }

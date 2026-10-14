@@ -1,99 +1,78 @@
 /**
- * TypeScript wrapper for the Go WASM StarScript engine.
+ * Engine wrapper - implements the public StarScriptEngine interface.
+ * Coordinates the WASM bridge and command registry.
  */
 
-import type {
+import {
   StarScriptEngine,
-  StarCommand,
+  CommandHandler,
   ExecuteResult,
-  ExecuteOptions,
   ExecuteError,
-  StarValue,
-  WasmExports,
-  EngineOptions,
+  ExecuteOptions,
 } from "./types.js";
-import { CommandRegistry } from "./command-registry.js";
-import { WasmBridge } from "./wasm-bridge.js";
+import { WasmBridge } from "./wasmBridge.js";
+import { CommandRegistry } from "./commandRegistry.js";
 
 /**
- * Implementation of StarScriptEngine using Go WASM backend.
+ * Checks if a result is an ExecuteError.
+ */
+function isExecuteError(obj: any): obj is ExecuteError {
+  return obj && typeof obj.code === "string" && typeof obj.message === "string";
+}
+
+/**
+ * Engine implementation wrapping the WASM bridge.
  */
 export class WasmStarScriptEngine implements StarScriptEngine {
-  private registry: CommandRegistry;
   private bridge: WasmBridge;
-  private wasm: WasmExports;
-  private engineId: number;
+  private registry: CommandRegistry;
   private disposed = false;
 
-  constructor(wasm: WasmExports, engineId: number) {
-    this.wasm = wasm;
-    this.engineId = engineId;
-    this.registry = new CommandRegistry();
-    this.bridge = new WasmBridge(this.registry);
-    this.bridge.setupCallback();
+  constructor(bridge: WasmBridge) {
+    this.bridge = bridge;
+    this.registry = bridge.getRegistry();
   }
 
-  registerCommand(name: string, handler: StarCommand): void {
-    this.checkDisposed();
+  registerCommand(name: string, handler: CommandHandler): void {
+    this.ensureNotDisposed();
     this.registry.register(name, handler);
   }
 
   unregisterCommand(name: string): void {
-    this.checkDisposed();
+    this.ensureNotDisposed();
     this.registry.unregister(name);
   }
 
-  async execute(source: string, options?: ExecuteOptions): Promise<ExecuteResult> {
-    this.checkDisposed();
-
-    // Set abort signal for command invocations during execution
-    this.bridge.setAbortSignal(options?.signal);
+  async execute(
+    source: string,
+    options?: ExecuteOptions
+  ): Promise<ExecuteResult> {
+    this.ensureNotDisposed();
 
     try {
-      const result = await this.wasm.execute(this.engineId, source);
-
-      return {
-        ok: true,
-        value: result.value,
-        variables: result.variables,
-        steps: result.steps,
-      };
+      return await this.bridge.execute(source, options?.maxSteps);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const executeError: ExecuteError = {
-        message,
-        kind: this.classifyError(message),
-      };
-
-      return {
-        ok: false,
-        error: executeError,
-      };
+      // Re-throw as-is (should already be ExecuteError from bridge)
+      throw error;
     }
   }
 
   dispose(): void {
-    if (!this.disposed) {
-      this.wasm.disposeEngine(this.engineId);
-      this.registry.clear();
-      this.disposed = true;
+    if (this.disposed) {
+      return;
     }
+
+    this.disposed = true;
+    this.registry.clear();
+
+    // Note: We don't clean up the WASM instance here since it's global.
+    // Multiple engines could theoretically share it, though current design
+    // is single-engine per WASM module.
   }
 
-  private checkDisposed(): void {
+  private ensureNotDisposed(): void {
     if (this.disposed) {
       throw new Error("Engine has been disposed");
     }
-  }
-
-  private classifyError(message: string): ExecuteError["kind"] {
-    if (message.includes("syntax") || message.includes("parse")) {
-      return "syntax_error";
-    } else if (message.includes("unknown command")) {
-      return "unknown_command";
-    } else if (message.includes("budget") || message.includes("exceeds")) {
-      return "budget_exceeded";
-    }
-    return "runtime_error";
   }
 }
