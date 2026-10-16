@@ -321,5 +321,306 @@
     "commands": { "test_cmd": { "result": { "kind": "string", "value": "OK" } } },
     "options": {},
     "expected": { "resultValue": { "kind": "string", "value": "OK" } }
+  },
+  {
+    "name": "for_loop_basic",
+    "source": "sum = 0\nfor i in [0..4] do\n  sum = $sum + $i\nend\nreturn $sum",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 10 } }
+  },
+  {
+    "name": "for_loop_single_iteration",
+    "source": "result = 0\nfor i in [5..5] do\n  result = $i\nend\nreturn $result",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 5 } }
+  },
+  {
+    "name": "for_loop_with_variable_bounds",
+    "source": "start = 2\nend_val = 4\ncount = 0\nfor i in [$start..$end_val] do\n  count = $count + 1\nend\nreturn $count",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 3 } }
+  },
+  {
+    "name": "comparison_less_than_or_equal",
+    "source": "return 5 <= 5",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "comparison_greater_than_or_equal",
+    "source": "return 5 >= 5",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "division_by_zero_error",
+    "source": "return 10 / 0",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "10 / 0" } }
+  },
+  {
+    "name": "if_elif_else_two_branches",
+    "source": "x = 2\nif $x == 1 do\n  y = 1\nelse do\n  y = 2\nend\nreturn $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 2 } }
+  },
+  {
+    "name": "nested_if_statements",
+    "source": "x = 1\ny = 2\nif $x == 1 do\n  if $y == 2 do\n    z = 99\n  else do\n    z = 0\n  end\nelse do\n  z = -1\nend\nreturn $z",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 99 } }
+  },
+  {
+    "name": "nested_for_loops",
+    "source": "sum = 0\nfor i in [0..2] do\n  for j in [0..1] do\n    sum = $sum + 1\n  end\nend\nreturn $sum",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 6 } }
+  },
+  {
+    "name": "return_with_explicit_null",
+    "source": "x = 5\nreturn null\ny = 10",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "null", "value": null } }
+  },
+  {
+    "name": "return_in_if_block",
+    "source": "x = 10\nif $x > 5 do\n  return 42\nend\nreturn 0",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 42 } }
+  },
+  {
+    "name": "multiple_assignments",
+    "source": "x = 1\ny = 2\nz = 3\nreturn $x + $y + $z",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 6 } }
+  },
+  {
+    "name": "string_escape_sequences",
+    "source": "x = \"hello\\nworld\"\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "hello\nworld" } }
+  },
+  {
+    "name": "string_with_quotes",
+    "source": "x = \"he said \\\"hello\\\"\"\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "he said \"hello\"" } }
+  },
+  {
+    "name": "float_numbers",
+    "source": "x = 3.14\ny = 2.86\nreturn $x + $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 6.0 } }
+  },
+  {
+    "name": "negative_numbers",
+    "source": "x = -5\ny = -3\nreturn $x + $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": -8 } }
+  },
+  {
+    "name": "boolean_and_null_equality",
+    "source": "x = true\nif $x == true do\n  return 1\nelse do\n  return 0\nend",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 1 } }
+  },
+  {
+    "name": "comparison_with_strings",
+    "source": "x = \"abc\" < \"def\"\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "abc < def" } }
+  },
+  {
+    "name": "command_with_multiple_args",
+    "source": "test_cmd 1 2 3",
+    "commands": { "test_cmd": { "result": { "kind": "number", "value": 6 } } },
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 6 } }
+  },
+  {
+    "name": "command_error_propagation",
+    "source": "test_cmd",
+    "commands": { "test_cmd": { "error": "test failure" } },
+    "options": {},
+    "expected": { "error": { "code": "runtime_error", "line": 1 } }
+  },
+  {
+    "name": "complex_expression_precedence",
+    "source": "return 2 + 3 * 4 - 1 / 2",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 13.5 } }
+  },
+  {
+    "name": "logical_and_with_falsy_values",
+    "source": "x = 0 && 5\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": false } }
+  },
+  {
+    "name": "logical_or_with_truthy_values",
+    "source": "x = 0 || 5\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "while_loop_with_early_termination",
+    "source": "i = 0\nsum = 0\nwhile $i < 10 do\n  sum = $sum + $i\n  i = $i + 1\n  if $i == 5 do\n    return $sum\n  end\nend",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 10 } }
+  },
+  {
+    "name": "for_loop_variable_scope",
+    "source": "for i in [0..2] do\n  x = $i\nend\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 2 } }
+  },
+  {
+    "name": "string_concatenation_multiple",
+    "source": "a = \"a\"\nb = \"b\"\nc = \"c\"\nreturn $a + $b + $c",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "abc" } }
+  },
+  {
+    "name": "assignment_from_expression",
+    "source": "x = 5 * 3 + 2\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 17 } }
+  },
+  {
+    "name": "if_without_else_true_condition",
+    "source": "x = 0\nif 1 do\n  x = 5\nend\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 5 } }
+  },
+  {
+    "name": "if_without_else_false_condition",
+    "source": "x = 5\nif 0 do\n  x = 10\nend\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 5 } }
+  },
+  {
+    "name": "empty_string_concatenation",
+    "source": "x = \"hello\"\ny = \"\"\nreturn $x + $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "hello" } }
+  },
+  {
+    "name": "null_in_arithmetic",
+    "source": "x = null\nreturn $x + 0",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "null + 0" } }
+  },
+  {
+    "name": "string_interpolation_in_command_arg",
+    "source": "x = 42\ntest_cmd $x",
+    "commands": { "test_cmd": { "result": { "kind": "number", "value": 42 } } },
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 42 } }
+  },
+  {
+    "name": "double_negation",
+    "source": "return !!true",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "comparison_chain_false",
+    "source": "x = 5 < 3\nreturn $x",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": false } }
+  },
+  {
+    "name": "for_loop_zero_length",
+    "source": "sum = 0\nfor i in [5..4] do\n  sum = $sum + 1\nend\nreturn $sum",
+    "commands": {},
+    "options": {},
+    "expected": { "error": { "code": "runtime_error", "line": 2 } }
+  },
+  {
+    "name": "variable_with_underscore",
+    "source": "my_var = 10\nmy_var_2 = 20\nreturn $my_var + $my_var_2",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 30 } }
+  },
+  {
+    "name": "scientific_notation_not_supported",
+    "source": "x = 1e5",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "string", "value": "1 e5" } }
+  },
+  {
+    "name": "true_false_inequality",
+    "source": "return true != false",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": true } }
+  },
+  {
+    "name": "string_number_not_equal",
+    "source": "return \"5\" != 5",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "bool", "value": false } }
+  },
+  {
+    "name": "inline_command_with_expression",
+    "source": "x = 3\ntest_cmd $x + 2",
+    "commands": { "test_cmd": { "result": { "kind": "number", "value": 5 } } },
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 5 } }
+  },
+  {
+    "name": "multiple_comments_per_line_not_supported",
+    "source": "x = 1 # comment 1\ny = 2 # comment 2\nreturn $x + $y",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 3 } }
+  },
+  {
+    "name": "whitespace_around_operators",
+    "source": "return 1 + 2",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 3 } }
+  },
+  {
+    "name": "no_whitespace_around_operators",
+    "source": "return 1+2",
+    "commands": {},
+    "options": {},
+    "expected": { "resultValue": { "kind": "number", "value": 3 } }
   }
 ]

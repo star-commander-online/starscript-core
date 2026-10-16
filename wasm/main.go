@@ -54,7 +54,7 @@ func main() {
 // jsExecute(source, onCommand, onDone, opts?) runs a script asynchronously.
 // Args: source (string), onCommand (function), onDone (function), opts (optional object with {maxSteps}).
 // Returns immediately with a runId string.
-// Calls onCommand(id, runId, name, args) for each host command.
+// Calls onCommand(id, runId, name, args, rawLine) for each host command.
 // Calls onDone(result) when execution finishes (result is {value, variables, steps} or {code, message, line}).
 func jsExecute(this js.Value, args []js.Value) any {
 	if len(args) < 3 {
@@ -253,9 +253,9 @@ func (w *wasmInvoker) Invoke(ctx context.Context, call command.Call) (value.Valu
 		jsArgs[i] = arg.ToAny()
 	}
 
-	// Call JS onCommand(id, runId, name, args).
+	// Call JS onCommand(id, runId, name, args, rawLine).
 	// This returns immediately; JS handles the command asynchronously.
-	w.onCommand.Invoke(cmdID, w.runID, call.Name, jsArgs)
+	w.onCommand.Invoke(cmdID, w.runID, call.Name, jsArgs, call.RawLine)
 
 	// Block until JS calls resolve/reject, which sends on resultCh.
 	// If the context is cancelled, return early.

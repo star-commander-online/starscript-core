@@ -226,7 +226,7 @@ func (e *Engine) invokeCommand(ctx context.Context, stmt *ast.CommandStmt) (valu
 	}
 
 	// Invoke the command
-	out, err := e.invoker.Invoke(ctx, command.Call{Name: stmt.Name, Args: args})
+	out, err := e.invoker.Invoke(ctx, command.Call{Name: stmt.Name, Args: args, RawLine: stmt.RawLine})
 	if err != nil {
 		// Handle command invocation errors
 		if command.IsUnknown(err) {

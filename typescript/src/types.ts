@@ -15,6 +15,7 @@ export type StarValue = null | boolean | number | string;
 export interface CommandContext {
   name: string;
   args: StarValue[];
+  rawLine: string; // The original command line from source
   runId: string; // The execution ID that issued this command
 }
 
@@ -99,7 +100,7 @@ export interface StarScriptEngine {
 export interface WasmExports {
   execute: (
     source: string,
-    onCommand: (id: string, runId: string, name: string, args: any[]) => void,
+    onCommand: (id: string, runId: string, name: string, args: any[], rawLine: string) => void,
     onDone: (result: any) => void,
     opts?: { maxSteps?: number }
   ) => string; // Returns runId

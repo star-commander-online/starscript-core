@@ -10,8 +10,9 @@ import (
 
 // Call describes one command invocation requested by a script.
 type Call struct {
-	Name string        `json:"name"`
-	Args []value.Value `json:"args"`
+	Name    string        `json:"name"`
+	Args    []value.Value `json:"args"`
+	RawLine string        `json:"rawLine"` // The original command line from source
 }
 
 // Invoker is implemented by host integrations and is owned by the embedding app.

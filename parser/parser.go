@@ -27,8 +27,10 @@ func Parse(source string) (*ast.Program, error) {
 
 	// Parse tokens into AST
 	parser := &parser{
-		tokens: tokens,
-		pos:    0,
+		tokens:    tokens,
+		pos:       0,
+		source:    source,
+		sourceLns: strings.Split(source, "\n"),
 	}
 
 	statements, err := parser.parseProgram()
@@ -40,8 +42,18 @@ func Parse(source string) (*ast.Program, error) {
 }
 
 type parser struct {
-	tokens []Token
-	pos    int
+	tokens    []Token
+	pos       int
+	source    string
+	sourceLns []string
+}
+
+// getRawLine returns the raw source line for the given line number (1-indexed)
+func (p *parser) getRawLine(lineNum int) string {
+	if lineNum < 1 || lineNum > len(p.sourceLns) {
+		return ""
+	}
+	return p.sourceLns[lineNum-1]
 }
 
 func (p *parser) parseProgram() ([]ast.Statement, error) {
@@ -213,7 +225,8 @@ func (p *parser) parseFor() (ast.Statement, error) {
 	}
 	p.advance() // consume '['
 
-	startExpr, err := p.parseExpression()
+	// Parse start expression (stops at '..')
+	startExpr, err := p.parseRangeExpression()
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +236,8 @@ func (p *parser) parseFor() (ast.Statement, error) {
 	}
 	p.advance() // consume '..'
 
-	endExpr, err := p.parseExpression()
+	// Parse end expression (stops at ']')
+	endExpr, err := p.parseRangeExpression()
 	if err != nil {
 		return nil, err
 	}
@@ -255,6 +269,44 @@ func (p *parser) parseFor() (ast.Statement, error) {
 		Body:      body,
 		AtLine:    forToken.Line,
 	}, nil
+}
+
+// parseRangeExpression parses an expression inside a for loop range, stopping at '..' or ']'
+func (p *parser) parseRangeExpression() (string, error) {
+	startPos := p.pos
+	depth := 0
+
+	for !p.isAtEnd() {
+		tType := p.peekType()
+
+		// Stop at '..' or ']' at depth 0
+		if (tType == TokenDotDot || tType == TokenRBracket) && depth == 0 {
+			break
+		}
+
+		// Stop at statement delimiters
+		if tType == TokenNewline || tType == TokenEnd {
+			break
+		}
+
+		// Handle nested brackets/parentheses
+		if tType == TokenLBracket || tType == TokenLParen {
+			depth++
+		} else if tType == TokenRBracket || tType == TokenRParen {
+			depth--
+			if depth < 0 {
+				break
+			}
+		}
+
+		p.advance()
+	}
+
+	if startPos == p.pos {
+		return "", p.errorf("Empty expression")
+	}
+
+	return p.reconstructTokens(startPos, p.pos), nil
 }
 
 func (p *parser) parseReturn() (ast.Statement, error) {
@@ -310,9 +362,10 @@ func (p *parser) parseAssignmentOrCommand() (ast.Statement, error) {
 
 	// Return the command statement
 	return &ast.CommandStmt{
-		Name:   name,
-		Args:   args,
-		AtLine: nameToken.Line,
+		Name:    name,
+		Args:    args,
+		RawLine: p.getRawLine(nameToken.Line),
+		AtLine:  nameToken.Line,
 	}, nil
 }
 

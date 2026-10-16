@@ -41,10 +41,11 @@ export class WasmBridge {
         id: string,
         runId: string,
         name: string,
-        args: any[]
+        args: any[],
+        rawLine: string
       ) => {
         // Handle command asynchronously
-        this.handleCommand(id, runId, name, args).catch((error) => {
+        this.handleCommand(id, runId, name, args, rawLine).catch((error) => {
           // If command handler errors, reject it to the Go side
           this.wasm.reject(id, "command_error", error.message);
         });
@@ -82,7 +83,8 @@ export class WasmBridge {
     id: string,
     runId: string,
     name: string,
-    args: any[]
+    args: any[],
+    rawLine: string
   ): Promise<void> {
     // Check if command is registered
     if (!this.registry.has(name)) {
@@ -95,6 +97,7 @@ export class WasmBridge {
       const result = await this.registry.invoke({
         name,
         args,
+        rawLine,
         runId,
       });
 

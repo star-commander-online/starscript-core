@@ -21,9 +21,10 @@ func (s *AssignmentStmt) Line() int      { return s.AtLine }
 
 // Plain command lines.
 type CommandStmt struct {
-	Name   string
-	Args   []string
-	AtLine int
+	Name    string
+	Args    []string
+	RawLine string // The original command line from source
+	AtLine  int
 }
 
 func (s *CommandStmt) statementNode() {}
