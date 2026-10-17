@@ -112,11 +112,15 @@ Execution failures return an `ExecuteError`:
 
 ```typescript
 try {
-  await engine.execute('unknown_command arg1');
+  await engine.execute(`
+    x = 10
+    result = divide $x 0
+    return $result
+  `);
 } catch (error) {
-  console.log(error.code);    // "unknown_command" or other error code
-  console.log(error.message); // Error description
-  console.log(error.line);    // Source line number
+  console.log(error.code);    // "runtime_error" (or "command_error" if invoker fails)
+  console.log(error.message); // "Division by zero" or error from invoker
+  console.log(error.line);    // 3 (line where command was invoked)
 }
 ```
 

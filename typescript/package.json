@@ -1,6 +1,6 @@
 {
   "name": "@star-commander-online/starscript-core",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "TypeScript bridge for the Go StarScript interpreter for Star Commander Online",
   "license": "MIT",
   "type": "module",

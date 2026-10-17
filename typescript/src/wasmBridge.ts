@@ -20,12 +20,13 @@ interface WasmExecutionResult {
  */
 export class WasmBridge {
   private wasm: WasmExports;
-  private invoker: (id: string, runId: string, rawLine: string) => Promise<StarValue>;
+  private invoker: (id: string, runId: string, commandLine: string, lineNumber: number) => Promise<StarValue>;
   private pendingRuns: Map<string, AbortController> = new Map();
+  private pendingCommandLines: Map<string, number> = new Map(); // Map of command ID to line number
 
   constructor(
     wasm: WasmExports,
-    invoker: (id: string, runId: string, rawLine: string) => Promise<StarValue>
+    invoker: (id: string, runId: string, commandLine: string, lineNumber: number) => Promise<StarValue>
   ) {
     this.wasm = wasm;
     this.invoker = invoker;
@@ -41,17 +42,22 @@ export class WasmBridge {
   ): Promise<ExecuteResult> {
     return new Promise((resolve, reject) => {
       // Set up callbacks for the Go bridge
-      const onCommand = (id: string, runId: string, rawLine: string) => {
+      const onCommand = (id: string, runId: string, commandLine: string, lineNumber: number) => {
+        // Store line number for error reporting
+        this.pendingCommandLines.set(id, lineNumber);
         
         // Handle command asynchronously - MUST call both .then() and .catch()
-        this.invoker(id, runId, rawLine)
+        this.invoker(id, runId, commandLine, lineNumber)
           .then((result) => {
+            this.pendingCommandLines.delete(id);
             this.wasm.resolve(id, result);
           })
           .catch((error) => {
-            // If command handler errors, reject it to the Go side
+            // If command handler errors, reject it to the Go side with line number
             const message = error instanceof Error ? error.message : String(error);
-            this.wasm.reject(id, "command_error", message);
+            const line = this.pendingCommandLines.get(id) || 0;
+            this.pendingCommandLines.delete(id);
+            this.wasm.reject(id, "command_error", message, line);
           });
       };
 

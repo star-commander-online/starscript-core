@@ -168,8 +168,9 @@ func jsResolve(this js.Value, args []js.Value) any {
 	return nil
 }
 
-// jsReject(id, code, message) completes a pending command with an error.
-// code can be "unknown_command" or other error types.
+// jsReject(id, code, message, lineNumber) completes a pending command with an error.
+// code can be "command_error" or other error types.
+// lineNumber (optional 4th param) is the source line where the command was invoked.
 // The waiting goroutine's Invoke() will return an error.
 func jsReject(this js.Value, args []js.Value) any {
 	if len(args) < 3 {
@@ -180,9 +181,16 @@ func jsReject(this js.Value, args []js.Value) any {
 	code := args[1].String()
 	message := args[2].String()
 
-	// Build the appropriate error for the code.
+	// Extract line number if provided (4th parameter)
+	lineNumber := 0
+	if len(args) > 3 && args[3].Type() == js.TypeNumber {
+		lineNumber = args[3].Int()
+	}
+
+	// Build a CommandError that includes line info
+	// We wrap it so the runtime can extract and preserve the line number
 	var err error
-	err = fmt.Errorf("%s: %s", code, message)
+	err = fmt.Errorf("%s: %s (line %d)", code, message, lineNumber)
 
 	// Find the waiting goroutine and send the error.
 	commandsMu.Lock()
@@ -243,10 +251,11 @@ func (w *wasmInvoker) Invoke(ctx context.Context, call command.Call) (value.Valu
 		commandsMu.Unlock()
 	}()
 
-	// Call JS onCommand(id, runId, rawLine).
+	// Call JS onCommand(id, runId, commandLine, lineNumber).
 	// This returns immediately; JS handles the command asynchronously.
-	// The host is responsible for parsing and executing the raw line.
-	w.onCommand.Invoke(cmdID, w.runID, call.RawLine)
+	// The commandLine has variables already interpolated.
+	// lineNumber is for error reporting if the command fails.
+	w.onCommand.Invoke(cmdID, w.runID, call.CommandLine, call.LineNumber)
 
 	// Block until JS calls resolve/reject, which sends on resultCh.
 	// If the context is cancelled, return early.

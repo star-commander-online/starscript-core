@@ -37,13 +37,15 @@ export interface ExecuteError {
 }
 
 /**
- * Command invoker function - responsible for parsing and executing raw command lines.
- * Receives the command line and must return the result or throw an error.
+ * Command invoker function - variables are interpolated in the command line.
+ * Receives the command line with $variables already resolved, line number for error reporting, and must return the result or throw an error.
+ * If the invoker throws an error, the script will stop with that error and include the line number.
  */
 export type CommandInvoker = (
   id: string,
   runId: string,
-  rawLine: string
+  commandLine: string,
+  lineNumber: number
 ) => Promise<StarValue>;
 
 /**
@@ -90,11 +92,11 @@ export interface StarScriptEngine {
 export interface WasmExports {
   execute: (
     source: string,
-    onCommand: (id: string, runId: string, rawLine: string) => void,
+    onCommand: (id: string, runId: string, commandLine: string, lineNumber: number) => void,
     onDone: (result: any) => void,
     opts?: { maxSteps?: number }
   ) => string; // Returns runId
   resolve: (id: string, value: any) => void;
-  reject: (id: string, code: string, message: string) => void;
+  reject: (id: string, code: string, message: string, lineNumber: number) => void;
   cancel: (runId: string) => void;
 }

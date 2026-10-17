@@ -62,7 +62,7 @@ type MockInvoker struct {
 
 func (m *MockInvoker) Invoke(ctx context.Context, call command.Call) (value.Value, error) {
 	// Extract command name from rawLine (first token)
-	tokens := strings.Fields(call.RawLine)
+	tokens := strings.Fields(call.CommandLine)
 	if len(tokens) == 0 {
 		return value.Value{}, fmt.Errorf("empty command line")
 	}

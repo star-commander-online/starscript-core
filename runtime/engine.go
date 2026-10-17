@@ -225,8 +225,18 @@ func (e *Engine) invokeCommand(ctx context.Context, stmt *ast.CommandStmt) (valu
 		args = append(args, arg)
 	}
 
-	// Invoke the command
-	out, err := e.invoker.Invoke(ctx, command.Call{RawLine: stmt.RawLine, Args: args})
+	// Interpolate the raw line to resolve all variable references
+	commandLine, err := e.interpolate(stmt.RawLine, stmt.Line())
+	if err != nil {
+		return value.Value{}, err
+	}
+
+	// Invoke the command with the interpolated line and line number for error reporting
+	out, err := e.invoker.Invoke(ctx, command.Call{
+		CommandLine: commandLine,
+		Args:        args,
+		LineNumber:  stmt.Line(),
+	})
 	if err != nil {
 		// Handle command invocation errors
 		return value.Value{}, &ScriptError{Code: ErrRuntime, Message: err.Error(), Line: stmt.Line()}

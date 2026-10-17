@@ -17,8 +17,10 @@ npm install @star-commander-online/starscript-core
 import { createEngine } from "@star-commander-online/starscript-core";
 
 // Create an invoker function to handle commands
-const invoker = async (id: string, runId: string, rawLine: string) => {
-  const [command, ...args] = rawLine.split(" ");
+// commandLine has variables interpolated ($x becomes actual value)
+// lineNumber is the source line for error reporting if command fails
+const invoker = async (id: string, runId: string, commandLine: string, lineNumber: number) => {
+  const [command, ...args] = commandLine.split(" ");
   
   if (command === "greet") {
     return `Hello, ${args.join(" ")}!`;
@@ -63,8 +65,8 @@ interface StarScriptEngine {
   dispose(): void;
 }
 
-// Command handler signature
-type CommandInvoker = (id: string, runId: string, rawLine: string) => Promise<StarValue>;
+// Command handler signature (variables already interpolated, includes line number)
+type CommandInvoker = (id: string, runId: string, commandLine: string, lineNumber: number) => Promise<StarValue>;
 
 // Value types
 type StarValue = null | boolean | number | string;
@@ -117,10 +119,15 @@ return response
 **Error handling:**
 ```typescript
 try {
-  await engine.execute("invalid !!!!");
+  await engine.execute(`
+    x = 10
+    result = divide $x 0
+    return $result
+  `);
 } catch (error) {
   const err = error as ExecuteError;
   console.log(`${err.code} at line ${err.line}: ${err.message}`);
+  // Example output: "command_error at line 3: Division by zero"
 }
 ```
 
@@ -146,26 +153,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 **Layer 3 (TypeScript)**: Public API
 - `typescript/src/` – Factory, engine, bridge, types
 
-## Performance
-
-- Startup: ~10-50ms (WASM loading)
-- Execution: ~1-10ms per script
-- Binary: ~3.8 MB raw, ~1 MB gzipped
-- Memory: ~5-10 MB per engine
-
 ## Documentation
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) – Development setup, building, testing
 - [SYNTAX_EXAMPLES.md](SYNTAX_EXAMPLES.md) – Extended language examples
-- [CHANGELOG.md](CHANGELOG.md) – Release history
-
-## Publishing
-
-```bash
-cd typescript && npm run build && npm publish --access public
-```
-
-Update `typescript/package.json` version and `CHANGELOG.md` first.
 
 ## License
 
