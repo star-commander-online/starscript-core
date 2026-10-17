@@ -120,7 +120,7 @@ try {
 }
 ```
 
-Common error codes: `parse_error`, `runtime_error`, `unknown_command`, `budget_exceeded`
+Common error codes: `parse_error`, `runtime_error`, `budget_exceeded`
 
 ## Execution Options
 
