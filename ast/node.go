@@ -39,7 +39,7 @@ type ReturnStmt struct {
 func (s *ReturnStmt) statementNode() {}
 func (s *ReturnStmt) Line() int      { return s.AtLine }
 
-// if <condition> ... else ... fi
+// if <condition> ... else ... end
 type IfStmt struct {
 	Condition string
 	Then      []Statement
@@ -50,7 +50,7 @@ type IfStmt struct {
 func (s *IfStmt) statementNode() {}
 func (s *IfStmt) Line() int      { return s.AtLine }
 
-// while <condition> ... done
+// while <condition> ... end
 type WhileStmt struct {
 	Condition string
 	Body      []Statement
@@ -60,7 +60,7 @@ type WhileStmt struct {
 func (s *WhileStmt) statementNode() {}
 func (s *WhileStmt) Line() int      { return s.AtLine }
 
-// for <var> in [start..end]; do ... done
+// for <var> in [start..end] do ... end
 type ForStmt struct {
 	VarName   string
 	StartExpr string

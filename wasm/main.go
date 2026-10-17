@@ -54,7 +54,7 @@ func main() {
 // jsExecute(source, onCommand, onDone, opts?) runs a script asynchronously.
 // Args: source (string), onCommand (function), onDone (function), opts (optional object with {maxSteps}).
 // Returns immediately with a runId string.
-// Calls onCommand(id, runId, name, args, rawLine) for each host command.
+// Calls onCommand(id, runId, rawLine) for each host command.
 // Calls onDone(result) when execution finishes (result is {value, variables, steps} or {code, message, line}).
 func jsExecute(this js.Value, args []js.Value) any {
 	if len(args) < 3 {
@@ -182,11 +182,7 @@ func jsReject(this js.Value, args []js.Value) any {
 
 	// Build the appropriate error for the code.
 	var err error
-	if code == "unknown_command" {
-		err = command.UnknownCommand(message)
-	} else {
-		err = fmt.Errorf("%s: %s", code, message)
-	}
+	err = fmt.Errorf("%s: %s", code, message)
 
 	// Find the waiting goroutine and send the error.
 	commandsMu.Lock()
@@ -247,15 +243,10 @@ func (w *wasmInvoker) Invoke(ctx context.Context, call command.Call) (value.Valu
 		commandsMu.Unlock()
 	}()
 
-	// Convert Go args ([]value.Value) to JS values.
-	jsArgs := make([]any, len(call.Args))
-	for i, arg := range call.Args {
-		jsArgs[i] = arg.ToAny()
-	}
-
-	// Call JS onCommand(id, runId, name, args, rawLine).
+	// Call JS onCommand(id, runId, rawLine).
 	// This returns immediately; JS handles the command asynchronously.
-	w.onCommand.Invoke(cmdID, w.runID, call.Name, jsArgs, call.RawLine)
+	// The host is responsible for parsing and executing the raw line.
+	w.onCommand.Invoke(cmdID, w.runID, call.RawLine)
 
 	// Block until JS calls resolve/reject, which sends on resultCh.
 	// If the context is cancelled, return early.

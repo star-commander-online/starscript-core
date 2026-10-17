@@ -7,7 +7,6 @@ type ErrorCode string
 const (
 	ErrSyntax         ErrorCode = "syntax_error"    // Parse error in script source text (invalid syntax, block mismatches)
 	ErrRuntime        ErrorCode = "runtime_error"   // Execution error (undefined variable, type mismatch, etc)
-	ErrUnknownCommand ErrorCode = "unknown_command" // Host command not found
 	ErrBudgetExceeded ErrorCode = "budget_exceeded" // Execution step limit reached
 )
 

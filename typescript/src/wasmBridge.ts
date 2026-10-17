@@ -1,8 +1,8 @@
 /**
  * WASM bridge - handles Go ↔ JS communication for the async command protocol.
+ * Passes raw command lines to the host invoker for full parsing and execution.
  */
 
-import { CommandRegistry } from "./commandRegistry.js";
 import { WasmExports, ExecuteError, ExecuteResult, StarValue } from "./types.js";
 
 /**
@@ -16,15 +16,19 @@ interface WasmExecutionResult {
 
 /**
  * Wraps the WASM bridge API and coordinates command invocation.
+ * Passes raw command lines to the host invoker.
  */
 export class WasmBridge {
   private wasm: WasmExports;
-  private registry: CommandRegistry;
+  private invoker: (id: string, runId: string, rawLine: string) => Promise<StarValue>;
   private pendingRuns: Map<string, AbortController> = new Map();
 
-  constructor(wasm: WasmExports, registry: CommandRegistry) {
+  constructor(
+    wasm: WasmExports,
+    invoker: (id: string, runId: string, rawLine: string) => Promise<StarValue>
+  ) {
     this.wasm = wasm;
-    this.registry = registry;
+    this.invoker = invoker;
   }
 
   /**
@@ -37,17 +41,12 @@ export class WasmBridge {
   ): Promise<ExecuteResult> {
     return new Promise((resolve, reject) => {
       // Set up callbacks for the Go bridge
-      const onCommand = (
-        id: string,
-        runId: string,
-        name: string,
-        args: any[],
-        rawLine: string
-      ) => {
+      const onCommand = (id: string, runId: string, rawLine: string) => {
         // Handle command asynchronously
-        this.handleCommand(id, runId, name, args, rawLine).catch((error) => {
+        this.invoker(id, runId, rawLine).catch((error) => {
           // If command handler errors, reject it to the Go side
-          this.wasm.reject(id, "command_error", error.message);
+          const message = error instanceof Error ? error.message : String(error);
+          this.wasm.reject(id, "command_error", message);
         });
       };
 
@@ -76,41 +75,6 @@ export class WasmBridge {
   }
 
   /**
-   * Handle a single command invocation.
-   * Looks up the handler in the registry, invokes it, and sends result back to Go.
-   */
-  private async handleCommand(
-    id: string,
-    runId: string,
-    name: string,
-    args: any[],
-    rawLine: string
-  ): Promise<void> {
-    // Check if command is registered
-    if (!this.registry.has(name)) {
-      this.wasm.reject(id, "unknown_command", `Unknown command: ${name}`);
-      return;
-    }
-
-    try {
-      // Invoke the handler
-      const result = await this.registry.invoke({
-        name,
-        args,
-        rawLine,
-        runId,
-      });
-
-      // Send result back to Go
-      this.wasm.resolve(id, result);
-    } catch (error) {
-      // Send error back to Go
-      const message = error instanceof Error ? error.message : String(error);
-      this.wasm.reject(id, "command_error", message);
-    }
-  }
-
-  /**
    * Cancel an in-flight execution.
    */
   cancel(runId: string): void {
@@ -124,13 +88,5 @@ export class WasmBridge {
    */
   getWasm(): WasmExports {
     return this.wasm;
-  }
-
-  /**
-   * Get the command registry.
-   * Used for testing and inspection.
-   */
-  getRegistry(): CommandRegistry {
-    return this.registry;
   }
 }

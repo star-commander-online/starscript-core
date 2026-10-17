@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/star-commander-online/starscript-core/command"
@@ -60,9 +61,16 @@ type MockInvoker struct {
 }
 
 func (m *MockInvoker) Invoke(ctx context.Context, call command.Call) (value.Value, error) {
-	spec, ok := m.specs[call.Name]
+	// Extract command name from rawLine (first token)
+	tokens := strings.Fields(call.RawLine)
+	if len(tokens) == 0 {
+		return value.Value{}, fmt.Errorf("empty command line")
+	}
+
+	cmdName := tokens[0]
+	spec, ok := m.specs[cmdName]
 	if !ok {
-		return value.Value{}, command.UnknownCommand(call.Name)
+		return value.Value{}, fmt.Errorf("unknown command: %s", cmdName)
 	}
 
 	if spec.Error != nil {

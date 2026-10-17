@@ -1,46 +1,25 @@
 /**
  * Engine wrapper - implements the public StarScriptEngine interface.
- * Coordinates the WASM bridge and command registry.
+ * Coordinates the WASM bridge and delegates command execution to the host invoker.
  */
 
 import {
   StarScriptEngine,
-  CommandHandler,
   ExecuteResult,
   ExecuteError,
   ExecuteOptions,
 } from "./types.js";
 import { WasmBridge } from "./wasmBridge.js";
-import { CommandRegistry } from "./commandRegistry.js";
-
-/**
- * Checks if a result is an ExecuteError.
- */
-function isExecuteError(obj: any): obj is ExecuteError {
-  return obj && typeof obj.code === "string" && typeof obj.message === "string";
-}
 
 /**
  * Engine implementation wrapping the WASM bridge.
  */
 export class WasmStarScriptEngine implements StarScriptEngine {
   private bridge: WasmBridge;
-  private registry: CommandRegistry;
   private disposed = false;
 
   constructor(bridge: WasmBridge) {
     this.bridge = bridge;
-    this.registry = bridge.getRegistry();
-  }
-
-  registerCommand(name: string, handler: CommandHandler): void {
-    this.ensureNotDisposed();
-    this.registry.register(name, handler);
-  }
-
-  unregisterCommand(name: string): void {
-    this.ensureNotDisposed();
-    this.registry.unregister(name);
   }
 
   async execute(
@@ -63,7 +42,6 @@ export class WasmStarScriptEngine implements StarScriptEngine {
     }
 
     this.disposed = true;
-    this.registry.clear();
 
     // Note: We don't clean up the WASM instance here since it's global.
     // Multiple engines could theoretically share it, though current design

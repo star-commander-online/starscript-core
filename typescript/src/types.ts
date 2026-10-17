@@ -10,23 +10,13 @@
 export type StarValue = null | boolean | number | string;
 
 /**
- * Context passed to a command handler.
+ * Command information passed to the host invoker.
+ * The host is responsible for parsing and executing the raw line.
  */
 export interface CommandContext {
-  name: string;
-  args: StarValue[];
   rawLine: string; // The original command line from source
   runId: string; // The execution ID that issued this command
 }
-
-/**
- * Handler for a command.
- * Can be synchronous or return a Promise for async operations.
- * Must return a StarValue (scalar only).
- */
-export type CommandHandler = (
-  context: CommandContext
-) => StarValue | Promise<StarValue>;
 
 /**
  * Result of script execution.
@@ -41,16 +31,27 @@ export interface ExecuteResult {
  * Structured error from script execution.
  */
 export interface ExecuteError {
-  code: string; // e.g., "parse_error", "runtime_error", "unknown_command", "budget_exceeded"
+  code: string; // e.g., "parse_error", "runtime_error", "budget_exceeded"
   message: string;
   line: number; // 0 if not applicable
 }
+
+/**
+ * Command invoker function - responsible for parsing and executing raw command lines.
+ * Receives the command line and must return the result or throw an error.
+ */
+export type CommandInvoker = (
+  id: string,
+  runId: string,
+  rawLine: string
+) => Promise<StarValue>;
 
 /**
  * Options for engine creation.
  */
 export interface EngineOptions {
   wasmUrl?: string; // URL to starscript.wasm; auto-detected if omitted
+  invoker: CommandInvoker; // Required: handles command parsing and execution
 }
 
 /**
@@ -62,23 +63,12 @@ export interface ExecuteOptions {
 
 /**
  * Public interface for the StarScript engine.
- * Users interact with this to execute scripts and manage commands.
+ * Users interact with this to execute scripts.
  */
 export interface StarScriptEngine {
   /**
-   * Register a command handler.
-   * If a handler already exists for this name, it's replaced.
-   */
-  registerCommand(name: string, handler: CommandHandler): void;
-
-  /**
-   * Unregister a command handler.
-   * No-op if the command is not registered.
-   */
-  unregisterCommand(name: string): void;
-
-  /**
    * Execute a script asynchronously.
+   * The host invoker handles all command parsing and execution.
    * Returns a Promise that resolves with the result or rejects with an error.
    */
   execute(
@@ -100,7 +90,7 @@ export interface StarScriptEngine {
 export interface WasmExports {
   execute: (
     source: string,
-    onCommand: (id: string, runId: string, name: string, args: any[], rawLine: string) => void,
+    onCommand: (id: string, runId: string, rawLine: string) => void,
     onDone: (result: any) => void,
     opts?: { maxSteps?: number }
   ) => string; // Returns runId

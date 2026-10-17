@@ -26,13 +26,6 @@
     "expected": { "error": { "code": "runtime_error", "line": 1 } }
   },
   {
-    "name": "unknown_command_error",
-    "source": "missing 1",
-    "commands": {},
-    "options": {},
-    "expected": { "error": { "code": "unknown_command", "line": 1 } }
-  },
-  {
     "name": "budget_exceeded",
     "source": "a = 1\nb = 2",
     "commands": {},

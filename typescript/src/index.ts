@@ -9,16 +9,15 @@ import "./wasm_exec.js";
 export {
   StarValue,
   CommandContext,
-  CommandHandler,
+  CommandInvoker,
   ExecuteResult,
   ExecuteError,
   EngineOptions,
   ExecuteOptions,
   StarScriptEngine,
-} from "./types";
+} from "./types.js";
 
 import { loadWasm } from "./wasmLoader.js";
-import { CommandRegistry } from "./commandRegistry.js";
 import { WasmBridge } from "./wasmBridge.js";
 import { WasmStarScriptEngine } from "./engine.js";
 import { StarScriptEngine, EngineOptions } from "./types.js";
@@ -30,20 +29,17 @@ import { StarScriptEngine, EngineOptions } from "./types.js";
  *
  * The wasm_exec.js runtime must be loaded before calling this function.
  *
- * @param options - Engine options (wasmUrl, etc.)
+ * @param options - Engine options (wasmUrl, invoker)
  * @returns Promise that resolves with a ready-to-use engine
  */
 export async function createEngine(
-  options?: EngineOptions
+  options: EngineOptions
 ): Promise<StarScriptEngine> {
   // Load the WASM module
-  const wasm = await loadWasm(options?.wasmUrl);
+  const wasm = await loadWasm(options.wasmUrl);
 
-  // Create the command registry
-  const registry = new CommandRegistry();
-
-  // Create the bridge
-  const bridge = new WasmBridge(wasm, registry);
+  // Create the bridge with the invoker
+  const bridge = new WasmBridge(wasm, options.invoker);
 
   // Create and return the engine
   return new WasmStarScriptEngine(bridge);

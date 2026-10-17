@@ -125,7 +125,7 @@ func (e *Engine) execStatement(ctx context.Context, stmt ast.Statement) (value.V
 		}
 		return v, true, nil
 
-	// If block: if condition ... [else ...] fi
+	// If block: if condition ... [else ...] end
 	case *ast.IfStmt:
 		ok, err := e.evalCondition(node.Condition, node.Line())
 		if err != nil {
@@ -136,7 +136,7 @@ func (e *Engine) execStatement(ctx context.Context, stmt ast.Statement) (value.V
 		}
 		return e.execBlock(ctx, node.Else)
 
-	// While block: while condition ... done
+	// While block: while condition ... end
 	case *ast.WhileStmt:
 		last := value.Null()
 		for { // loop forever until something is returned or the condition fails
@@ -159,7 +159,7 @@ func (e *Engine) execStatement(ctx context.Context, stmt ast.Statement) (value.V
 			}
 		}
 
-	// For range: for var in [start..end]; do ... done
+	// For range: for var in [start..end] do ... end
 	case *ast.ForStmt:
 		start, end, err := e.evalForBounds(node)
 		if err != nil {
@@ -226,12 +226,9 @@ func (e *Engine) invokeCommand(ctx context.Context, stmt *ast.CommandStmt) (valu
 	}
 
 	// Invoke the command
-	out, err := e.invoker.Invoke(ctx, command.Call{Name: stmt.Name, Args: args, RawLine: stmt.RawLine})
+	out, err := e.invoker.Invoke(ctx, command.Call{RawLine: stmt.RawLine, Args: args})
 	if err != nil {
 		// Handle command invocation errors
-		if command.IsUnknown(err) {
-			return value.Value{}, &ScriptError{Code: ErrUnknownCommand, Message: err.Error(), Line: stmt.Line()}
-		}
 		return value.Value{}, &ScriptError{Code: ErrRuntime, Message: err.Error(), Line: stmt.Line()}
 	}
 

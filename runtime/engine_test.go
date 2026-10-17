@@ -62,25 +62,6 @@ end
 	}
 }
 
-func TestExecute_UnknownCommandClassification(t *testing.T) {
-	engine := NewEngine(testInvoker{fn: func(ctx context.Context, call command.Call) (value.Value, error) {
-		return value.Value{}, command.UnknownCommand(call.Name)
-	}}, Options{MaxSteps: 20})
-
-	_, err := engine.Execute(context.Background(), `missing 1`)
-	if err == nil {
-		t.Fatalf("expected unknown command error")
-	}
-
-	var scriptErr *ScriptError
-	if !AsScriptError(err, &scriptErr) {
-		t.Fatalf("expected ScriptError, got %T", err)
-	}
-	if scriptErr.Code != ErrUnknownCommand {
-		t.Fatalf("expected %q, got %q", ErrUnknownCommand, scriptErr.Code)
-	}
-}
-
 func TestExecute_BudgetExceeded(t *testing.T) {
 	engine := NewEngine(testInvoker{fn: func(ctx context.Context, call command.Call) (value.Value, error) {
 		return value.Null(), nil
