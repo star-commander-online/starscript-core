@@ -153,12 +153,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 - Binary: ~3.8 MB raw, ~1 MB gzipped
 - Memory: ~5-10 MB per engine
 
-## Limitations
-
-- Scalar-only values (no arrays/objects)
-- Single execution context per engine
-- Parser: Avoid deeply nested expressions
-
 ## Documentation
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) – Development setup, building, testing
