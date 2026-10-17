@@ -42,12 +42,17 @@ export class WasmBridge {
     return new Promise((resolve, reject) => {
       // Set up callbacks for the Go bridge
       const onCommand = (id: string, runId: string, rawLine: string) => {
-        // Handle command asynchronously
-        this.invoker(id, runId, rawLine).catch((error) => {
-          // If command handler errors, reject it to the Go side
-          const message = error instanceof Error ? error.message : String(error);
-          this.wasm.reject(id, "command_error", message);
-        });
+        
+        // Handle command asynchronously - MUST call both .then() and .catch()
+        this.invoker(id, runId, rawLine)
+          .then((result) => {
+            this.wasm.resolve(id, result);
+          })
+          .catch((error) => {
+            // If command handler errors, reject it to the Go side
+            const message = error instanceof Error ? error.message : String(error);
+            this.wasm.reject(id, "command_error", message);
+          });
       };
 
       const onDone = (result: any) => {

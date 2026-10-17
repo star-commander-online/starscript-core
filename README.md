@@ -16,9 +16,17 @@ npm install @star-commander-online/starscript-core
 ```typescript
 import { createEngine } from "@star-commander-online/starscript-core";
 
-const engine = await createEngine();
+// Create an invoker function to handle commands
+const invoker = async (id: string, runId: string, rawLine: string) => {
+  const [command, ...args] = rawLine.split(" ");
+  
+  if (command === "greet") {
+    return `Hello, ${args.join(" ")}!`;
+  }
+  throw new Error(`Unknown command: ${command}`);
+};
 
-engine.registerCommand("greet", (ctx) => `Hello, ${ctx.args[0]}!`);
+const engine = await createEngine({ invoker });
 
 const result = await engine.execute(`
   greeting = greet "World"
@@ -32,8 +40,8 @@ engine.dispose();
 ## Features
 
 - **Variables & Expressions**: Arithmetic, string ops, boolean logic
-- **Control Flow**: if/elif/else, while, for [start..end]
-- **Commands**: Extensible async-first command system
+- **Control Flow**: if/else, while, for [start..end]
+- **Commands**: Extensible async-first command system (via invoker)
 - **Interpolation**: `$varname` syntax in strings/expressions
 - **Error Recovery**: Structured errors with line numbers
 - **Execution Limits**: Step budget to prevent runaway scripts
@@ -41,25 +49,27 @@ engine.dispose();
 ## API
 
 ```typescript
-async function createEngine(options?: EngineOptions): Promise<StarScriptEngine>
+// Create an engine instance
+async function createEngine(options: EngineOptions): Promise<StarScriptEngine>
 
+interface EngineOptions {
+  invoker: CommandInvoker;      // Required: handles all commands
+  wasmUrl?: string;              // Optional: custom WASM URL
+}
+
+// Main engine interface
 interface StarScriptEngine {
-  registerCommand(name: string, handler: CommandHandler): void;
-  unregisterCommand(name: string): void;
   execute(source: string, options?: ExecuteOptions): Promise<ExecuteResult>;
   dispose(): void;
 }
 
+// Command handler signature
+type CommandInvoker = (id: string, runId: string, rawLine: string) => Promise<StarValue>;
+
+// Value types
 type StarValue = null | boolean | number | string;
 
-interface CommandContext {
-  name: string;
-  args: StarValue[];
-  runId: string;
-}
-
-type CommandHandler = (context: CommandContext) => StarValue | Promise<StarValue>;
-
+// Execution results
 interface ExecuteResult {
   value: StarValue;
   variables: Record<string, StarValue>;
@@ -80,7 +90,7 @@ interface ExecuteError {
 x = 42
 name = "Alice"
 
-# Variables, expressions, string interpolation
+# Variables and expressions
 message = "Hello, $name! x is $x"
 
 # Control flow
@@ -90,35 +100,18 @@ else do
   result = "small"
 end
 
-# While and for loops
-count = 0
-while count < 5 do
-  count = count + 1
+# Loops
+while x < 100 do
+  x = x + 1
 end
 
-for i in [1..10] do
-  print i
+for i in [1..5] do
+  action i
 end
 
-# Command invocation
-response = fetchData "https://example.com"
+# Commands (passed to your invoker)
+response = getData "key"
 return response
-```
-
-## Examples
-
-**Async handler:**
-```typescript
-engine.registerCommand("delay", async (ctx) => {
-  const ms = Number(ctx.args[0]);
-  await new Promise(r => setTimeout(r, ms));
-  return `waited ${ms}ms`;
-});
-
-const result = await engine.execute(`
-  status = delay 1000
-  return status
-`);
 ```
 
 **Error handling:**
@@ -133,48 +126,52 @@ try {
 
 ## Building from Source
 
-Prerequisites: Go 1.23+, Node.js 18+, TypeScript 5.0+
-
-```bash
-cd typescript
-npm run build           # Build WASM + TypeScript
-npm run publish        # Build and publish to npm
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Prerequisites (Go 1.23+, Node.js 18+)
+- Build commands
+- Testing procedures
+- Code style guidelines
 
 ## Architecture
 
-**Layer 1 (Go)**: Parser, runtime, value types in `ast/`, `parser/`, `runtime/`, `value/`
+**Layer 1 (Go)**: Parser, runtime, value types
+- `ast/` – AST node definitions
+- `parser/` – Script parser
+- `runtime/` – Execution engine
+- `value/` – Scalar value representation
 
-**Layer 2 (WASM)**: Async command bridge in `wasm/main.go` – converts Go sync calls to JS async via channels
+**Layer 2 (WASM)**: Async command bridge
+- `wasm/main.go` – Converts Go sync calls to JS async via channels
 
-**Layer 3 (TypeScript)**: Public API in `typescript/src/` – factory, engine, bridge, registry, types
+**Layer 3 (TypeScript)**: Public API
+- `typescript/src/` – Factory, engine, bridge, types
 
 ## Performance
 
 - Startup: ~10-50ms (WASM loading)
 - Execution: ~1-10ms per script
-- Binary: 3.8 MB raw, ~1 MB gzipped
+- Binary: ~3.8 MB raw, ~1 MB gzipped
 - Memory: ~5-10 MB per engine
 
 ## Limitations
 
-- Parser: Infinite recursion issue with deeply nested scripts (flatten as workaround)
-- Values: Scalar-only (no arrays/objects)
-- Concurrency: Single context per engine (use multiple engines for parallel execution)
+- Scalar-only values (no arrays/objects)
+- Single execution context per engine
+- Parser: Avoid deeply nested expressions
 
 ## Documentation
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) – Development setup and workflow
+- [CONTRIBUTING.md](CONTRIBUTING.md) – Development setup, building, testing
 - [SYNTAX_EXAMPLES.md](SYNTAX_EXAMPLES.md) – Extended language examples
 - [CHANGELOG.md](CHANGELOG.md) – Release history
 
 ## Publishing
 
-Update `typescript/package.json`, update `CHANGELOG.md`, then:
-
 ```bash
 cd typescript && npm run build && npm publish --access public
 ```
+
+Update `typescript/package.json` version and `CHANGELOG.md` first.
 
 ## License
 

@@ -51,6 +51,7 @@ const (
 	TokenLBracket // [
 	TokenRBracket // ]
 	TokenDotDot   // ..
+	TokenDot      // .
 	TokenLParen   // (
 	TokenRParen   // )
 	TokenComma    // ,
@@ -216,6 +217,8 @@ func (l *Lexer) nextToken() error {
 		l.emit(TokenComma, ",")
 	case '$':
 		l.emit(TokenDollar, "$")
+	case '.':
+		l.emit(TokenDot, ".")
 	default:
 		return fmt.Errorf("unexpected character %q at line %d, column %d", ch, l.line, l.column)
 	}
